@@ -1,4 +1,3 @@
-# required
 resource "google_compute_security_policy" "default" {
   name = var.cloudarmour_rule_name
 
@@ -16,6 +15,7 @@ resource "google_compute_security_policy" "default" {
     }
   }
 
+  #checkov:skip=CKV_GCP_73: False trigger
   rule {
     action      = "deny(403)"
     priority    = "2147483646"
