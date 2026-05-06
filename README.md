@@ -30,7 +30,7 @@ No requirements.
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | n/a |
 
 ## Modules
@@ -40,13 +40,13 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [google_compute_security_policy.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_security_policy) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_cloudarmour_rule_ips"></a> [cloudarmour\_rule\_ips](#input\_cloudarmour\_rule\_ips) | CloudArmour rule IP addresses | `list(any)` | n/a | yes |
 | <a name="input_cloudarmour_rule_name"></a> [cloudarmour\_rule\_name](#input\_cloudarmour\_rule\_name) | CloudArmour rule name | `string` | n/a | yes |
 
