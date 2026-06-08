@@ -18,8 +18,8 @@ resource "google_compute_security_policy" "default" {
   #checkov:skip=CKV_GCP_73: False trigger
   rule {
     action      = "deny(403)"
-    priority    = "2147483646"
-    description = "log4j"
+    priority    = "0"
+    description = "log4j CVE canary — evaluated before all allow rules"
 
     match {
       expr {
@@ -32,8 +32,9 @@ resource "google_compute_security_policy" "default" {
     for_each = chunklist(sort(var.cloudarmour_rule_ips), 10)
 
     content {
-      action   = "allow"
-      priority = rule.key + 1
+      action      = "allow"
+      priority    = rule.key + 1
+      description = "Allowlisted IP range group ${rule.key + 1}"
 
       match {
         versioned_expr = "SRC_IPS_V1"
@@ -43,5 +44,9 @@ resource "google_compute_security_policy" "default" {
         }
       }
     }
+  }
+
+  log_config {
+    enable = true
   }
 }

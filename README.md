@@ -47,8 +47,8 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_cloudarmour_rule_ips"></a> [cloudarmour\_rule\_ips](#input\_cloudarmour\_rule\_ips) | CloudArmour rule IP addresses | `list(any)` | n/a | yes |
-| <a name="input_cloudarmour_rule_name"></a> [cloudarmour\_rule\_name](#input\_cloudarmour\_rule\_name) | CloudArmour rule name | `string` | n/a | yes |
+| <a name="input_cloudarmour_rule_ips"></a> [cloudarmour\_rule\_ips](#input\_cloudarmour\_rule\_ips) | List of IP CIDR ranges to allowlist (e.g. ["203.0.113.0/24", "198.51.100.1/32"]). Must be non-empty. | `list(string)` | n/a | yes |
+| <a name="input_cloudarmour_rule_name"></a> [cloudarmour\_rule\_name](#input\_cloudarmour\_rule\_name) | Cloud Armor security policy name. Must be 1-63 characters, lowercase letters, digits or hyphens, starting with a letter. | `string` | n/a | yes |
 
 ## Outputs
 

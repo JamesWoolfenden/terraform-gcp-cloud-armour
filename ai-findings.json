@@ -1,0 +1,23 @@
+{
+  "findings": [
+    {
+      "confidence": "high",
+      "explanation": "In Cloud Armor, lower priority numbers are evaluated first. The dynamic allow rules use `rule.key + 1` (priorities 1, 2, 3...), while the log4j CVE canary deny rule sits at priority 2147483646. Any request from an IP in the allowlist matches the allow rule at priority 1 and is admitted without ever reaching the CVE canary check. An attacker with a single allowlisted source IP can exploit log4j vulnerabilities against any backend protected by this policy with no Cloud Armor interference. A rule engine checks each rule in isolation and cannot see this cross-rule ordering conflict.",
+      "file": "google_compute_security_policy.tf",
+      "id": "HOLDEN_AI_001",
+      "line": 19,
+      "principle": "network-security",
+      "related_resources": [],
+      "remediation": "Move the CVE canary rule to priority 0 so it is evaluated before all allow rules: change `priority = \"2147483646\"` to `priority = \"0\"` on the log4j rule block. Also add a `description` attribute to the dynamic allow rule content block for auditability.",
+      "resource": "google_compute_security_policy.default",
+      "severity": "HIGH",
+      "title": "CVE canary rule priority is lower than allow rules \u2014 allowlisted IPs bypass log4j protection"
+    }
+  ],
+  "suggested_policies": [
+    {
+      "rationale": "Cloud Armor logging is disabled by default. Without it, blocked and allowed requests produce no Cloud Logging entries, making it impossible to audit allowlist hits, detect evasion, or tune rules after incidents. This is a repeatable attribute check on every google_compute_security_policy resource and no existing holden policy covers it.",
+      "yaml": "id: HLD_PROPOSED_008\nname: Cloud Armor security policies must enable request logging\nprinciple: logging-and-monitoring\nseverity: MEDIUM\nrationale: |\n  Cloud Armor security policy logging is disabled by default. Without it,\n  every allow and deny decision is silent \u2014 there is no Cloud Logging entry\n  for blocked attacks, allowlist hits, or CVE canary triggers. This makes\n  post-incident investigation impossible and prevents detection of evasion\n  attempts or misconfigured rules.\nremediation: |\n  Add a log_config block to the security policy:\n\n  ```hcl\n  resource \"google_compute_security_policy\" \"example\" {\n    log_config {\n      enable = true\n    }\n  }\n  ```\nresources:\n  google_compute_security_policy:\n    path: log_config.enable\n    equals: true\n"
+    }
+  ]
+}
