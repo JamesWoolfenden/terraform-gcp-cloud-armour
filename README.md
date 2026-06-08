@@ -47,12 +47,27 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_cloudarmour_rule_ips"></a> [cloudarmour\_rule\_ips](#input\_cloudarmour\_rule\_ips) | List of IP CIDR ranges to allowlist (e.g. ["203.0.113.0/24", "198.51.100.1/32"]). Must be non-empty. | `list(string)` | n/a | yes |
-| <a name="input_cloudarmour_rule_name"></a> [cloudarmour\_rule\_name](#input\_cloudarmour\_rule\_name) | Cloud Armor security policy name. Must be 1-63 characters, lowercase letters, digits or hyphens, starting with a letter. | `string` | n/a | yes |
+| <a name="input_adaptive_protection"></a> [adaptive\_protection](#input\_adaptive\_protection) | Adaptive Protection ML-based Layer 7 DDoS defence. Only effective when type = CLOUD\_ARMOR. rule\_visibility: STANDARD (attack signatures only) or PREMIUM (full request detail — requires Cloud Armor Managed Protection Plus). | <pre>object({<br/>    enable          = bool<br/>    rule_visibility = optional(string, "STANDARD")<br/>  })</pre> | <pre>{<br/>  "enable": true,<br/>  "rule_visibility": "STANDARD"<br/>}</pre> | no |
+| <a name="input_custom_rules"></a> [custom\_rules](#input\_custom\_rules) | Arbitrary rules using Cloud Armor CEL expressions. Use for logic that cannot be expressed via preconfigured WAF, rate limiting, or geo rules — e.g. header-based matching, multi-country geo blocks, or composite conditions. | <pre>list(object({<br/>    priority    = number<br/>    action      = string<br/>    expression  = string<br/>    description = optional(string, "")<br/>    preview     = optional(bool, false)<br/>  }))</pre> | `[]` | no |
+| <a name="input_default_action"></a> [default\_action](#input\_default\_action) | Action for the catch-all default rule at priority 2147483647. Use deny(403) for an allowlist policy (block everything unless explicitly permitted) or allow for a denylist policy. | `string` | `"deny(403)"` | no |
+| <a name="input_description"></a> [description](#input\_description) | Human-readable description for the security policy. | `string` | `""` | no |
+| <a name="input_enable_cve_canary"></a> [enable\_cve\_canary](#input\_enable\_cve\_canary) | Enable the log4j/CVE canary deny rule at priority 0, evaluated before all other rules including the IP allowlist. Disable only if you are covering the same CVEs with a higher-priority custom rule. | `bool` | `true` | no |
+| <a name="input_geo_rules"></a> [geo\_rules](#input\_geo\_rules) | Rules matching request origin by ISO 3166-1 alpha-2 country/region code (e.g. CN, RU, KP). Use priorities in the range 1–899 alongside WAF rules. For multi-country matching in one rule, use custom\_rules with a CEL expression such as "origin.region\_code.matches('CN\|RU')". | <pre>list(object({<br/>    priority    = number<br/>    action      = string<br/>    region_code = string<br/>    description = optional(string, "")<br/>    preview     = optional(bool, false)<br/>  }))</pre> | `[]` | no |
+| <a name="input_ip_allowlist"></a> [ip\_allowlist](#input\_ip\_allowlist) | IP CIDR ranges to explicitly allow (evaluated at priority 1000+, after WAF and rate-limit rules). Pass an empty list to omit allowlist rules. | `list(string)` | `[]` | no |
+| <a name="input_json_parsing"></a> [json\_parsing](#input\_json\_parsing) | JSON body parsing mode. DISABLED: no parsing. STANDARD: parse JSON bodies for WAF inspection. STANDARD\_WITH\_GRAPHQL: also parse GraphQL. Only effective when type = CLOUD\_ARMOR. | `string` | `"STANDARD"` | no |
+| <a name="input_log_level"></a> [log\_level](#input\_log\_level) | Cloud Armor logging verbosity. NORMAL logs matched rules only. VERBOSE logs all evaluated rules — useful for tuning but increases log volume. | `string` | `"NORMAL"` | no |
+| <a name="input_name"></a> [name](#input\_name) | Cloud Armor security policy name. Must be 2-63 characters, lowercase letters, digits or hyphens, starting with a letter. | `string` | n/a | yes |
+| <a name="input_preconfigured_waf_rules"></a> [preconfigured\_waf\_rules](#input\_preconfigured\_waf\_rules) | Preconfigured WAF rules using evaluatePreconfiguredExpr(). Use priorities in the range 1–899 to<br/>ensure they are evaluated before the IP allowlist (1000+). Append ;sensitivity=N (1–4) to tune<br/>the detection sensitivity. Common expressions:<br/>  sqli-v33-stable           — SQL injection<br/>  xss-v33-stable            — Cross-site scripting<br/>  lfi-v33-stable            — Local file inclusion<br/>  rfi-v33-stable            — Remote file inclusion<br/>  rce-v33-stable            — Remote code execution<br/>  methodenforcement-v33-stable — HTTP method enforcement<br/>  scannerdetection-v33-stable  — Vulnerability scanner detection<br/>  protocolattack-v33-stable    — HTTP protocol attacks<br/>  sessionfixation-v33-stable   — Session fixation<br/>  cve-canary                   — Generic CVE canary (covered by enable\_cve\_canary) | <pre>list(object({<br/>    expression  = string<br/>    priority    = number<br/>    action      = optional(string, "deny(403)")<br/>    description = optional(string, "")<br/>    preview     = optional(bool, false)<br/>  }))</pre> | `[]` | no |
+| <a name="input_rate_limit_rules"></a> [rate\_limit\_rules](#input\_rate\_limit\_rules) | Rate limiting / throttle rules. action must be throttle (soft limit, excess requests<br/>get exceed\_action) or rate\_based\_ban (ban the client for ban\_duration\_sec after exceeding<br/>the threshold). enforce\_on\_key values: IP, ALL, HTTP\_HEADER, XFF\_IP, HTTP\_COOKIE,<br/>HTTP\_PATH, SNI, REGION\_CODE. Use priorities in 900–999 so they fire after WAF rules<br/>but before the IP allowlist. | <pre>list(object({<br/>    priority                = number<br/>    description             = optional(string, "")<br/>    src_ip_ranges           = optional(list(string), ["*"])<br/>    action                  = optional(string, "throttle")<br/>    exceed_action           = optional(string, "deny(429)")<br/>    rate_limit_count        = number<br/>    rate_limit_interval_sec = number<br/>    enforce_on_key          = optional(string, "IP")<br/>    ban_duration_sec        = optional(number, null)<br/>    preview                 = optional(bool, false)<br/>  }))</pre> | `[]` | no |
+| <a name="input_type"></a> [type](#input\_type) | Security policy type. CLOUD\_ARMOR (global external ALB, full feature set), CLOUD\_ARMOR\_EDGE (Cloud CDN / Media CDN), or CLOUD\_ARMOR\_NETWORK (advanced network DDoS for network LBs). Adaptive protection and advanced\_options\_config are only available for CLOUD\_ARMOR. | `string` | `"CLOUD_ARMOR"` | no |
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+| ---- | ----------- |
+| <a name="output_policy"></a> [policy](#output\_policy) | The Cloud Armor security policy resource. Attach it to a backend service via google\_compute\_backend\_service.security\_policy = google\_compute\_security\_policy.default.self\_link. |
+| <a name="output_policy_name"></a> [policy\_name](#output\_policy\_name) | Name of the Cloud Armor security policy. |
+| <a name="output_policy_self_link"></a> [policy\_self\_link](#output\_policy\_self\_link) | Self-link of the Cloud Armor security policy, for use in google\_compute\_backend\_service.security\_policy. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
 ## Information
@@ -99,7 +114,7 @@ Please use the [issue tracker](https://github.com/jameswoolfenden/terraform-aws-
 
 ## Copyrights
 
-Copyright � 2023 James Woolfenden
+Copyright � 2023-26 James Woolfenden
 
 ## License
 
