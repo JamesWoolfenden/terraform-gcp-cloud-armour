@@ -11,16 +11,26 @@
 
 ## Usage
 
-Add **module.art.tf** to your code:-
+Add **module.cloudarmour.tf** to your code:-
 
 ```terraform
-module "cloudarnour" {
-  source             = "JamesWoolfenden/cloud-armour/gcp"
-  cloudarmour_rule_ips = [
-  "${module.ip.ip}/32", ]
-  cloudarmour_rule_name = "pike"
+module "cloudarmour" {
+  source = "JamesWoolfenden/cloud-armour/gcp"
+
+  name = "pike"
+  ip_allowlist = [
+    "${module.ip.ip}/32",
+  ]
 }
 ```
+
+Attach the resulting policy to a backend service via `policy_self_link`, and
+enable `log_config { enable = true }` on that backend service — Cloud Armor
+enforcement decisions are only recorded once both are wired together. See
+[example/examplea](example/examplea) for a complete, deployable reference:
+Cloud Armor policy (WAF rules, rate limiting, adaptive protection) fronting a
+Cloud Run service via an external HTTP load balancer, with backend service
+logging enabled end-to-end.
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements

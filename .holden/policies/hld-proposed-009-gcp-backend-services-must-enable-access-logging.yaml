@@ -1,0 +1,26 @@
+id: HLD_PROPOSED_009
+name: GCP backend services must enable access logging
+principle: logging-and-monitoring
+severity: MEDIUM
+rationale: |
+  Cloud Armor security policy enforcement decisions (allow/deny, matched rule,
+  CVE canary hits) are only captured when the backend service the policy is
+  attached to has access logging enabled. Without log_config.enable = true on
+  the backend service, WAF and rate-limit decisions are invisible -- there is
+  no record of blocked attacks, allowlist hits, or canary triggers, making
+  post-incident investigation and rule tuning impossible.
+remediation: |
+  Add a log_config block to the backend service:
+
+  ```hcl
+  resource "google_compute_backend_service" "example" {
+    log_config {
+      enable      = true
+      sample_rate = 1.0
+    }
+  }
+  ```
+resources:
+  google_compute_backend_service:
+    path: log_config.enable
+    equals: true

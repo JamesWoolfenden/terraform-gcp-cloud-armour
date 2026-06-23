@@ -1,4 +1,3 @@
-#checkov:skip=CKV_GCP_73: CVE canary is controlled by var.enable_cve_canary; disable only when covered by a higher-priority custom rule
 # holden:ignore:HLD_GCP_176 — Cloud Armor security policies do not use VPC access; network-level control is on the attached backend service
 resource "google_compute_security_policy" "default" {
   name        = var.name
@@ -150,9 +149,5 @@ resource "google_compute_security_policy" "default" {
         src_ip_ranges = ["*"]
       }
     }
-  }
-
-  log_config {
-    enable = true
   }
 }
