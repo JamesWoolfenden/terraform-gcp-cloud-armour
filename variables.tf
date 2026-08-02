@@ -144,9 +144,9 @@ variable "rate_limit_rules" {
   description = <<-EOT
     Rate limiting / throttle rules. action must be throttle (soft limit, excess requests
     get exceed_action) or rate_based_ban (ban the client for ban_duration_sec after exceeding
-    the threshold). enforce_on_key values: IP, ALL, HTTP_HEADER, XFF_IP, HTTP_COOKIE,
-    HTTP_PATH, SNI, REGION_CODE. Use priorities in 900–999 so they fire after WAF rules
-    but before the IP allowlist.
+    the threshold). enforce_on_key values: ALL, IP, HTTP_HEADER, XFF_IP, HTTP_COOKIE,
+    HTTP_PATH, SNI, REGION_CODE, TLS_JA3_FINGERPRINT, TLS_JA4_FINGERPRINT, USER_IP. Use
+    priorities in 900–999 so they fire after WAF rules but before the IP allowlist.
   EOT
   default     = []
 
@@ -158,6 +158,11 @@ variable "rate_limit_rules" {
   validation {
     condition     = alltrue([for r in var.rate_limit_rules : r.priority >= 1 && r.priority <= 2147483646])
     error_message = "All rate_limit_rules must have priority between 1 and 2147483646."
+  }
+
+  validation {
+    condition     = alltrue([for r in var.rate_limit_rules : contains(["ALL", "IP", "HTTP_HEADER", "XFF_IP", "HTTP_COOKIE", "HTTP_PATH", "SNI", "REGION_CODE", "TLS_JA3_FINGERPRINT", "TLS_JA4_FINGERPRINT", "USER_IP"], r.enforce_on_key)])
+    error_message = "All rate_limit_rules must have a valid enforce_on_key: ALL, IP, HTTP_HEADER, XFF_IP, HTTP_COOKIE, HTTP_PATH, SNI, REGION_CODE, TLS_JA3_FINGERPRINT, TLS_JA4_FINGERPRINT, or USER_IP."
   }
 }
 

@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "confidence": "high",
+      "explanation": "Not a real gap for this repo. The module is versioned independently via semver git tags (source = \"JamesWoolfenden/cloud-armour/gcp\", consumers pin a module version), which is the actual compatibility contract. Adding required_providers to the module root would layer a second, uncoordinated provider constraint on top of that \u2014 one that can conflict with whatever the consuming root or sibling modules already declare (Terraform's classic nested-module version-constraint diamond problem) \u2014 for no real benefit, since a lock file inside a module directory is never read by Terraform at all (only the root configuration's lock file is used at init). Deliberately rejected by the module author; do not re-flag this pattern for reusable module roots in this author's repos.",
+      "file": "main.tf",
+      "first_seen": "2026-08-02",
+      "fixable": false,
+      "id": "HOLDEN_BP_001",
+      "last_seen": "2026-08-02",
+      "line": 1,
+      "principle": "repeatability",
+      "remediation": "None \u2014 intentional design. Reusable modules stay unpinned at the root; only example/ (a deployable root config) gets required_version/required_providers and a lock file.",
+      "resource": "module (root)",
+      "severity": "LOW",
+      "status": "suppressed",
+      "title": "Root module declares no required_providers / required_version constraint"
+    },
+    {
+      "confidence": "high",
+      "explanation": "The variable description lists enforce_on_key values as IP, ALL, HTTP_HEADER, XFF_IP, HTTP_COOKIE, HTTP_PATH, SNI, REGION_CODE, but no validation block enforces this \u2014 unlike action and priority on the same variable, which both have validation. A typo (e.g. \"Ip\" or \"HTTP_Header\") passes terraform plan and only fails against the live GCP API at apply time. Checked against the current hashicorp/google provider source: the actual accepted set is larger than what's documented \u2014 it also includes TLS_JA3_FINGERPRINT, TLS_JA4_FINGERPRINT, and USER_IP \u2014 so the description itself is out of date in addition to being unenforced.",
+      "file": "variables.tf",
+      "first_seen": "2026-08-02",
+      "fix": "validation {\n    condition = alltrue([for r in var.rate_limit_rules : contains([\"ALL\", \"IP\", \"HTTP_HEADER\", \"XFF_IP\", \"HTTP_COOKIE\", \"HTTP_PATH\", \"SNI\", \"REGION_CODE\", \"TLS_JA3_FINGERPRINT\", \"TLS_JA4_FINGERPRINT\", \"USER_IP\"], r.enforce_on_key)])\n    error_message = \"All rate_limit_rules must have a valid enforce_on_key: ALL, IP, HTTP_HEADER, XFF_IP, HTTP_COOKIE, HTTP_PATH, SNI, REGION_CODE, TLS_JA3_FINGERPRINT, TLS_JA4_FINGERPRINT, or USER_IP.\"\n  }\n",
+      "fixable": true,
+      "id": "HOLDEN_BP_002",
+      "last_seen": "2026-08-02",
+      "line": 140,
+      "principle": "maintainability",
+      "remediation": "Add a validation block on rate_limit_rules constraining enforce_on_key to the full, current enum, and update the description to match.",
+      "resource": "variable.rate_limit_rules",
+      "severity": "LOW",
+      "status": "fixed",
+      "title": "rate_limit_rules.enforce_on_key has no validation against its documented enum, and the documented enum is stale"
+    }
+  ],
+  "scan_date": "2026-08-02T00:00:00Z",
+  "scan_path": ".",
+  "suggested_policies": []
+}

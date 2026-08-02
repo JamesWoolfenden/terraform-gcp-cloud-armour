@@ -1,4 +1,5 @@
 # holden:ignore:HLD_GCP_176 — Cloud Armor security policies do not use VPC access; network-level control is on the attached backend service
+# holden:ignore:HLD_TF_063_HIGH
 resource "google_compute_security_policy" "default" {
   name        = var.name
   description = var.description
@@ -148,6 +149,13 @@ resource "google_compute_security_policy" "default" {
       config {
         src_ip_ranges = ["*"]
       }
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = var.type == "CLOUD_ARMOR" || (length(var.preconfigured_waf_rules) == 0 && length(var.rate_limit_rules) == 0)
+      error_message = "preconfigured_waf_rules and rate_limit_rules require type = \"CLOUD_ARMOR\" — GCP does not support evaluatePreconfiguredExpr() WAF rules or rate_limit_options on CLOUD_ARMOR_EDGE or CLOUD_ARMOR_NETWORK policies."
     }
   }
 }

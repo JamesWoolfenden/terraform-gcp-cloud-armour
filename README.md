@@ -68,7 +68,7 @@ No modules.
 | <a name="input_log_level"></a> [log\_level](#input\_log\_level) | Cloud Armor logging verbosity. NORMAL logs matched rules only. VERBOSE logs all evaluated rules — useful for tuning but increases log volume. | `string` | `"NORMAL"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Cloud Armor security policy name. Must be 2-63 characters, lowercase letters, digits or hyphens, starting with a letter. | `string` | n/a | yes |
 | <a name="input_preconfigured_waf_rules"></a> [preconfigured\_waf\_rules](#input\_preconfigured\_waf\_rules) | Preconfigured WAF rules using evaluatePreconfiguredExpr(). Use priorities in the range 1–899 to<br/>ensure they are evaluated before the IP allowlist (1000+). Append ;sensitivity=N (1–4) to tune<br/>the detection sensitivity. Common expressions:<br/>  sqli-v33-stable           — SQL injection<br/>  xss-v33-stable            — Cross-site scripting<br/>  lfi-v33-stable            — Local file inclusion<br/>  rfi-v33-stable            — Remote file inclusion<br/>  rce-v33-stable            — Remote code execution<br/>  methodenforcement-v33-stable — HTTP method enforcement<br/>  scannerdetection-v33-stable  — Vulnerability scanner detection<br/>  protocolattack-v33-stable    — HTTP protocol attacks<br/>  sessionfixation-v33-stable   — Session fixation<br/>  cve-canary                   — Generic CVE canary (covered by enable\_cve\_canary) | <pre>list(object({<br/>    expression  = string<br/>    priority    = number<br/>    action      = optional(string, "deny(403)")<br/>    description = optional(string, "")<br/>    preview     = optional(bool, false)<br/>  }))</pre> | `[]` | no |
-| <a name="input_rate_limit_rules"></a> [rate\_limit\_rules](#input\_rate\_limit\_rules) | Rate limiting / throttle rules. action must be throttle (soft limit, excess requests<br/>get exceed\_action) or rate\_based\_ban (ban the client for ban\_duration\_sec after exceeding<br/>the threshold). enforce\_on\_key values: IP, ALL, HTTP\_HEADER, XFF\_IP, HTTP\_COOKIE,<br/>HTTP\_PATH, SNI, REGION\_CODE. Use priorities in 900–999 so they fire after WAF rules<br/>but before the IP allowlist. | <pre>list(object({<br/>    priority                = number<br/>    description             = optional(string, "")<br/>    src_ip_ranges           = optional(list(string), ["*"])<br/>    action                  = optional(string, "throttle")<br/>    exceed_action           = optional(string, "deny(429)")<br/>    rate_limit_count        = number<br/>    rate_limit_interval_sec = number<br/>    enforce_on_key          = optional(string, "IP")<br/>    ban_duration_sec        = optional(number, null)<br/>    preview                 = optional(bool, false)<br/>  }))</pre> | `[]` | no |
+| <a name="input_rate_limit_rules"></a> [rate\_limit\_rules](#input\_rate\_limit\_rules) | Rate limiting / throttle rules. action must be throttle (soft limit, excess requests<br/>get exceed\_action) or rate\_based\_ban (ban the client for ban\_duration\_sec after exceeding<br/>the threshold). enforce\_on\_key values: ALL, IP, HTTP\_HEADER, XFF\_IP, HTTP\_COOKIE,<br/>HTTP\_PATH, SNI, REGION\_CODE, TLS\_JA3\_FINGERPRINT, TLS\_JA4\_FINGERPRINT, USER\_IP. Use<br/>priorities in 900–999 so they fire after WAF rules but before the IP allowlist. | <pre>list(object({<br/>    priority                = number<br/>    description             = optional(string, "")<br/>    src_ip_ranges           = optional(list(string), ["*"])<br/>    action                  = optional(string, "throttle")<br/>    exceed_action           = optional(string, "deny(429)")<br/>    rate_limit_count        = number<br/>    rate_limit_interval_sec = number<br/>    enforce_on_key          = optional(string, "IP")<br/>    ban_duration_sec        = optional(number, null)<br/>    preview                 = optional(bool, false)<br/>  }))</pre> | `[]` | no |
 | <a name="input_type"></a> [type](#input\_type) | Security policy type. CLOUD\_ARMOR (global external ALB, full feature set), CLOUD\_ARMOR\_EDGE (Cloud CDN / Media CDN), or CLOUD\_ARMOR\_NETWORK (advanced network DDoS for network LBs). Adaptive protection and advanced\_options\_config are only available for CLOUD\_ARMOR. | `string` | `"CLOUD_ARMOR"` | no |
 
 ## Outputs
@@ -86,7 +86,7 @@ No modules.
 The Terraform resource required is:
 
 ```golang
-
+# apply role
 resource "google_project_iam_custom_role" "terraform_pike" {
   project     = "pike-477416"
   role_id     = "terraform_pike"
@@ -97,6 +97,17 @@ resource "google_project_iam_custom_role" "terraform_pike" {
     "compute.securityPolicies.delete",
     "compute.securityPolicies.get",
     "compute.securityPolicies.update"
+  ]
+}
+
+# plan role
+resource "google_project_iam_custom_role" "terraform_pike_plan" {
+  project     = "pike-477416"
+  role_id     = "terraform_pike_plan"
+  title       = "terraform_pike_plan"
+  description = "A user with least privileges"
+  permissions = [
+    "compute.securityPolicies.get"
   ]
 }
 

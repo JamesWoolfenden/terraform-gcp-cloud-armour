@@ -1,0 +1,60 @@
+{
+  "findings": [
+    {
+      "confidence": "medium",
+      "explanation": "adaptive_protection_config (line 9-17) and advanced_options_config (line 20-26) are correctly gated behind `var.type == \"CLOUD_ARMOR\"`, and the variable descriptions document this restriction. But the preconfigured_waf_rules dynamic block (line 47) and rate_limit_rules dynamic block (line 96) have no such gate \u2014 they fire for any `var.type`. Per GCP's own Cloud Armor docs, edge security policies (CLOUD_ARMOR_EDGE) only support filtering on origin.asn/ip/region_code and request.headers/method/path/query/scheme \u2014 evaluatePreconfiguredExpr() (used by every preconfigured_waf_rules entry) and rate_limit_options are not in that list, and the docs' feature matrix indicates neither edge nor network policies support preconfigured WAF rules or rate limiting. A caller setting type = \"CLOUD_ARMOR_EDGE\" (a real, documented use case per this module's own variable description: \"CLOUD_ARMOR_EDGE (Cloud CDN / Media CDN)\") while also passing preconfigured_waf_rules or rate_limit_rules will build a plan GCP is likely to reject at apply \u2014 I could not confirm from public docs whether the API hard-rejects this or silently accepts and no-ops the unsupported rules; either outcome is bad (broken deploy, or a caller believing WAF/rate-limit protection is active when it silently isn't).",
+      "file": "google_compute_security_policy.tf",
+      "first_seen": "2026-08-02",
+      "fixable": false,
+      "id": "HOLDEN_AI_001",
+      "last_seen": "2026-08-02",
+      "line": 47,
+      "principle": "governance",
+      "related_resources": [
+        "variable.type",
+        "variable.preconfigured_waf_rules",
+        "variable.rate_limit_rules",
+        "google_compute_security_policy.tf:96 (rate_limit_rules dynamic block)"
+      ],
+      "remediation": "Add a variable validation (on preconfigured_waf_rules and/or rate_limit_rules, or a top-level check) that fails fast with a clear error when var.type != \"CLOUD_ARMOR\" and either list is non-empty, mirroring the existing restriction already documented for adaptive_protection/advanced_options_config.",
+      "resource": "google_compute_security_policy.default",
+      "severity": "MEDIUM",
+      "status": "fixed",
+      "suppression_reason": null,
+      "title": "preconfigured_waf_rules and rate_limit_rules are not gated to CLOUD_ARMOR, but GCP doesn't support them on CLOUD_ARMOR_EDGE/CLOUD_ARMOR_NETWORK policies",
+      "unresolved_since": "2026-08-02"
+    },
+    {
+      "confidence": "high",
+      "explanation": "This rule entry sets `preview = true`, which per Cloud Armor semantics means the rule is evaluated and logged but its `action` (deny(403), the module's default) is never actually enforced \u2014 yet `description = \"Block vulnerability scanner traffic\"` states the opposite. This is this repo's own reference implementation (README explicitly points people at example/examplea as \"a complete, deployable reference\"), so anyone copying it as-is inherits a WAF rule that looks like it blocks scanner traffic but doesn't. A rules engine can't catch this \u2014 it requires correlating the preview flag's semantics against the free-text description.",
+      "file": "example/examplea/module.cloudarmour.tf",
+      "first_seen": "2026-08-02",
+      "fixable": false,
+      "id": "HOLDEN_AI_002",
+      "last_seen": "2026-08-02",
+      "line": 34,
+      "principle": "network-security",
+      "related_resources": [],
+      "remediation": "Either drop `preview = true` if blocking scanner traffic is actually intended, or fix the description to reflect preview-only status (e.g. \"Preview: log vulnerability scanner traffic \u2014 not yet blocking, evaluate false-positive rate before enabling\").",
+      "resource": "module.CloudArmour (preconfigured_waf_rules[4], scannerdetection-v33-stable)",
+      "severity": "LOW",
+      "status": "fixed",
+      "suppression_reason": null,
+      "title": "Example's scannerdetection WAF rule is preview-only (logs, doesn't block) but its description says \"Block\"",
+      "unresolved_since": "2026-08-02"
+    }
+  ],
+  "scan_date": "2026-08-02T13:43:19Z",
+  "scan_path": ".",
+  "suggested_policies": [
+    {
+      "dsl_extension_note": "Turned out unnecessary \u2014 holden already had an if_equals (when/then) conditional primitive plus not_any/any for iterating repeated nested blocks. My original assessment that this needed a new DSL feature was wrong; I hadn't actually checked internal/policy/policy.go's ResourcePolicy struct before writing that claim. Implemented as HLD_GCP_454 in the holden repo (policies/gcp/compute/security-policy-type-rule-compatibility.yaml), with fixture tests/fixtures/gcp-cloud-armor-type-rule-compat/main.tf and TestGCPCloudArmorTypeRuleCompat in internal/policy/gcp_proposed_test.go. go test and golangci-lint clean; committed to JamesWoolfenden/holden main.",
+      "implemented_as": "HLD_GCP_454",
+      "rationale": "The module-level finding above (HOLDEN_AI_001) is a general GCP Cloud Armor pattern, not specific to this repo: any Terraform config that sets a security policy's type to CLOUD_ARMOR_EDGE or CLOUD_ARMOR_NETWORK while also defining a rule using evaluatePreconfiguredExpr() or a rate_limit_options block will hit the same GCP-side incompatibility. coverage_by_type[\"google_compute_security_policy\"] only has HLD_GCP_166 (deny-rule-beyond-default check), which doesn't touch this.",
+      "requires_dsl_extension": false,
+      "status": "implemented",
+      "yaml": "id: HLD_GCP_454\nname: Cloud Armor CLOUD_ARMOR_EDGE/CLOUD_ARMOR_NETWORK policies must not use preconfigured WAF rules or rate limiting\nprinciple: governance\nseverity: MEDIUM\nrationale: |\n  CLOUD_ARMOR_EDGE and CLOUD_ARMOR_NETWORK security policies don't support\n  evaluatePreconfiguredExpr() WAF rules or rate_limit_options \u2014 GCP's own docs\n  restrict edge policies to origin.asn/ip/region_code and request.headers/\n  method/path/query/scheme matching only. A policy of either type carrying a\n  rule with a preconfigured WAF expression or rate_limit_options will fail to\n  apply, or worse, silently not enforce the rule the author believes is active.\nremediation: |\n  Only use type = \"CLOUD_ARMOR\" when any rule needs evaluatePreconfiguredExpr()\n  or rate_limit_options. For CLOUD_ARMOR_EDGE/CLOUD_ARMOR_NETWORK, restrict\n  rules to IP/geo/header/method/path/query/scheme matching.\nresources:\n  google_compute_security_policy:\n    all:\n      - if_equals:\n          path: type\n          value: \"CLOUD_ARMOR_EDGE\"\n          then:\n            path: rule\n            not_any:\n              any:\n                - path: match.expr.expression\n                  matches: \"evaluatePreconfiguredExpr\"\n                - path: rate_limit_options\n                  not_null: true\n      - if_equals:\n          path: type\n          value: \"CLOUD_ARMOR_NETWORK\"\n          then:\n            path: rule\n            not_any:\n              any:\n                - path: match.expr.expression\n                  matches: \"evaluatePreconfiguredExpr\"\n                - path: rate_limit_options\n                  not_null: true\n"
+    }
+  ],
+  "suggested_suppressions": []
+}

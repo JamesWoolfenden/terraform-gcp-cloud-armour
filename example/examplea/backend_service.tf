@@ -6,6 +6,9 @@
 # holden:ignore:HLD_GCP_126: its an example
 # holden:ignore:HLD_GCP_084: its an example
 # holden:ignore:HLD_GCP_127: its an example
+# holden:ignore:HLD_GCP_331: its an example
+# holden:ignore:HLD_GCP_332: its an example
+# holden:ignore:HLD_GCP_336: its an example
 resource "google_cloud_run_v2_service" "demo" {
   name     = "pike-demo"
   location = var.region
@@ -43,6 +46,8 @@ resource "google_compute_region_network_endpoint_group" "demo" {
   }
 }
 
+# holden:ignore:HLD_GCP_333: its an example
+# holden:ignore:HLD_GCP_335: its an example
 resource "google_compute_backend_service" "demo" {
   name                  = "pike-demo-backend"
   load_balancing_scheme = "EXTERNAL_MANAGED"
