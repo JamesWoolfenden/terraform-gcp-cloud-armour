@@ -44,8 +44,8 @@
       "unresolved_since": "2026-08-02"
     }
   ],
-  "scan_date": "2026-08-02T13:43:19Z",
-  "scan_path": ".",
+  "scan_date": "2026-08-02T15:10:00Z",
+  "scan_path": ". example/examplea",
   "suggested_policies": [
     {
       "dsl_extension_note": "Turned out unnecessary \u2014 holden already had an if_equals (when/then) conditional primitive plus not_any/any for iterating repeated nested blocks. My original assessment that this needed a new DSL feature was wrong; I hadn't actually checked internal/policy/policy.go's ResourcePolicy struct before writing that claim. Implemented as HLD_GCP_454 in the holden repo (policies/gcp/compute/security-policy-type-rule-compatibility.yaml), with fixture tests/fixtures/gcp-cloud-armor-type-rule-compat/main.tf and TestGCPCloudArmorTypeRuleCompat in internal/policy/gcp_proposed_test.go. go test and golangci-lint clean; committed to JamesWoolfenden/holden main.",

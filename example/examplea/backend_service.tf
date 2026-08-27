@@ -9,6 +9,9 @@
 # holden:ignore:HLD_GCP_331: its an example
 # holden:ignore:HLD_GCP_332: its an example
 # holden:ignore:HLD_GCP_336: its an example
+# holden:ignore:HLD_GCP_481: its an example
+# holden:ignore:HLD_GCP_480: its an example
+# holden:ignore:HLD_GCP_200: its an example — hello-world demo image has no stable tag to pin to
 resource "google_cloud_run_v2_service" "demo" {
   name     = "pike-demo"
   location = var.region
