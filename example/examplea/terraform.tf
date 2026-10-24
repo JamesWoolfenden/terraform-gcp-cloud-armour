@@ -1,4 +1,4 @@
-# holden:ignore:HLD_TF_004
+# holden:ignore:HLD_TF_004: its sample for example
 terraform {
   required_providers {
     google = {
